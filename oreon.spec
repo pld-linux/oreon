@@ -12,9 +12,8 @@
 %define		RRD_PERL		%{perl_vendorarch}
 %define		_webapps	/etc/webapps
 %define		_webapp         oreon
-%define		_sysconfdir     %{_webapps}/%{_webapp}
+%define		_webconfdir     %{_webapps}/%{_webapp}
 %define		_appdir         %{_datadir}/%{_webapp}
-
 
 Summary:	Oreon - provide enterprise monitoring based on Nagios core.
 Name:		oreon
@@ -93,10 +92,9 @@ EOF
 
 %build
 
-
 %install
 rm -rf $RPM_BUILD_ROOT
-install -d $RPM_BUILD_ROOT{%{_libdir}/nagios/plugins,%{_sysconfdir}{/rc.d/init.d,/nagios},%{_bindir},%{_datadir}/%{name},%{INSTALL_DIR_OREON}/{cron/reporting/api,ODS}}
+install -d $RPM_BUILD_ROOT{%{_libdir}/nagios/plugins,%{_sysconfdir}{/rc.d/init.d,/nagios},%{_bindir},%{_datadir}/%{name},%{INSTALL_DIR_OREON}/{cron/reporting/api,ODS},%{_webconfdir}}
 
 # install nagios  plugins
 for fichier in %{PLUGINS_DIR}/src/*
@@ -133,8 +131,8 @@ sed -e 's|@OREON_PATH@|'"%{INSTALL_DIR_OREON}"'|g' cron/parsing_log.pl > $RPM_BU
 
 install cron/delete*.pl $RPM_BUILD_ROOT%{INSTALL_DIR_OREON}/cron
 install cron/reporting/api/* $RPM_BUILD_ROOT%{INSTALL_DIR_OREON}/cron/reporting/api
-install apache.conf $RPM_BUILD_ROOT%{_sysconfdir}/apache.conf
-install apache.conf $RPM_BUILD_ROOT%{_sysconfdir}/httpd.conf
+install apache.conf $RPM_BUILD_ROOT%{_webconfdir}/apache.conf
+install apache.conf $RPM_BUILD_ROOT%{_webconfdir}/httpd.conf
 
 %clean
 rm -rf $RPM_BUILD_ROOT
@@ -169,8 +167,8 @@ fi
 %defattr(644,root,root,755)
 %doc CHANGELOG README cron/*README.txt cron/reporting/*README.txt
 %dir %attr(750,root,http) %{_sysconfdir}
-%attr(640,root,root) %config(noreplace) %verify(not md5 mtime size) %{_sysconfdir}/apache.conf
-%attr(640,root,root) %config(noreplace) %verify(not md5 mtime size) %{_sysconfdir}/httpd.conf
+%attr(640,root,root) %config(noreplace) %verify(not md5 mtime size) %{_webconfdir}/apache.conf
+%attr(640,root,root) %config(noreplace) %verify(not md5 mtime size) %{_webconfdir}/httpd.conf
 #%attr(755,root,root) %{_bindir}/*
 %{_datadir}/%{name}
 %attr(755,root,root) %{_libdir}/nagios/plugins/*
