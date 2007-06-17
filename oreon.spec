@@ -10,13 +10,18 @@
 %define		NAGIOS_PLUGIN		%{_libdir}/nagios/plugins
 %define		INSTALL_DIR_OREON	%{_libdir}/%{name}
 %define		RRD_PERL		%{perl_vendorarch}
+%define		_webapps	/etc/webapps
+%define		_webapp         oreon
+%define		_sysconfdir     %{_webapps}/%{_webapp}
+%define		_appdir         %{_datadir}/%{_webapp}
+
 
 Summary:	Oreon - provide enterprise monitoring based on Nagios core.
 Name:		oreon
 Version:	1.4
 Release:	0.1
 License:	Apache Licence 2.0
-Group:		Applications
+Group:		Applications/WWW
 Source0:	http://download.oreon-project.org/tgz/%{name}-%{version}.tar.gz
 # Source0-md5:	31d1a2948fde3e4c0e922047c4633781
 Source1:	http://download.oreon-project.org/patch/%{name}-patch-%{version}-5.tgz
@@ -25,6 +30,8 @@ URL:		http://www.oreon-project.org/
 BuildRequires:	rpmbuild(macros) >= 1.228
 Requires(post,preun):	/sbin/chkconfig
 BuildRequires: 	rpm-perlprov
+Requires:       nagios-common
+Requires:       perl-GD
 Requires:	adodb >= 4.67-1.17
 Requires:	crondaemon
 Requires:	libgd2
@@ -55,11 +62,34 @@ and graphical representations of the gathered informations.
 Although, skilled users still have access to the technicals informations 
 collected by Nagios.
 
+%package setup
+Summary:        Oreon setup package
+Summary(pl.UTF-8):      Pakiet do wstępnej konfiguracji Oreona
+Group:          Applications/WWW
+Requires:       %{name} = %{version}-%{release}
+
+%description setup
+Install this package to configure initial Oreon installation. You
+should uninstall this package when you're done, as it considered
+insecure to keep the setup files in place.
+
+%description setup -l pl.UTF-8
+Ten pakiet należy zainstalowć w celu wsępnej konfiguracji Oreona po
+pierwszej instalacji. Potem należy go odinstalowć, jako że
+pozostawienie plików instalacyjnych mołoby bć niebezpieczne.
+
 %prep
 %setup -q
-
-# undos the source
 find '(' -name '*.php' -o -name '*.inc' ')' -print0 | xargs -0 sed -i -e 's,\r$,,'
+
+cat > apache.conf <<'EOF'
+Alias /oreon %{_appdir}
+<Directory %{_appdir}>
+        Allow from all
+        Options None
+        AllowOverride None
+</Directory>
+EOF
 
 %build
 
@@ -103,6 +133,8 @@ sed -e 's|@OREON_PATH@|'"%{INSTALL_DIR_OREON}"'|g' cron/parsing_log.pl > $RPM_BU
 
 install cron/delete*.pl $RPM_BUILD_ROOT%{INSTALL_DIR_OREON}/cron
 install cron/reporting/api/* $RPM_BUILD_ROOT%{INSTALL_DIR_OREON}/cron/reporting/api
+install apache.conf $RPM_BUILD_ROOT%{_sysconfdir}/apache.conf
+install apache.conf $RPM_BUILD_ROOT%{_sysconfdir}/httpd.conf
 
 %clean
 rm -rf $RPM_BUILD_ROOT
@@ -121,18 +153,45 @@ if [ "$1" = "0" ]; then
 	/sbin/chkconfig --del %{name}
 fi
 
+%triggerin -- apache1 < 1.3.37-3, apache1-base
+%webapp_register apache %{_webapp}
+
+%triggerun -- apache1 < 1.3.37-3, apache1-base
+%webapp_unregister apache %{_webapp}
+
+%triggerin -- apache < 2.2.0, apache-base
+%webapp_register httpd %{_webapp}
+
+%triggerun -- apache < 2.2.0, apache-base
+%webapp_unregister httpd %{_webapp}
+
 %files
 %defattr(644,root,root,755)
 %doc CHANGELOG README cron/*README.txt cron/reporting/*README.txt
-
-#%config(noreplace) %verify(not md5 mtime size) %{_sysconfdir}/*
+%dir %attr(750,root,http) %{_sysconfdir}
+%attr(640,root,root) %config(noreplace) %verify(not md5 mtime size) %{_sysconfdir}/apache.conf
+%attr(640,root,root) %config(noreplace) %verify(not md5 mtime size) %{_sysconfdir}/httpd.conf
 #%attr(755,root,root) %{_bindir}/*
 %{_datadir}/%{name}
 %attr(755,root,root) %{_libdir}/nagios/plugins/*
-
 #%attr(754,root,root) /etc/rc.d/init.d/%{name}
 #%config(noreplace) %verify(not md5 mtime size) /etc/sysconfig/%{name}
-
-
 #%doc extras/*.gz
 #%{_datadir}/%{name}-ext
+%exclude %{_appdir}/www/install
+
+%files setup
+%defattr(644,root,root,755)
+%{_appdir}/www/install
+
+%triggerin -- apache1 < 1.3.37-3, apache1-base
+%webapp_register apache %{_webapp}
+
+%triggerun -- apache1 < 1.3.37-3, apache1-base
+%webapp_unregister apache %{_webapp}
+
+%triggerin -- apache < 2.2.0, apache-base
+%webapp_register httpd %{_webapp}
+
+%triggerun -- apache < 2.2.0, apache-base
+%webapp_unregister httpd %{_webapp}
