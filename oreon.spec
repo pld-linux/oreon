@@ -1,5 +1,7 @@
 
 #TODO
+# - see nagios-oreon.spec, merge upgrade there and cvs rm oreon.spec
+
 # - use SMARTY from PLD
 
 %define		INSTALL_DIR_NAGIOS	%{_libdir}/nagios
