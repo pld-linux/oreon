@@ -21,7 +21,7 @@ Summary:	Oreon - provide enterprise monitoring based on Nagios core.
 Name:		oreon
 Version:	1.4
 Release:	0.1
-License:	Apache Licence 2.0
+License:	Apache v2.0
 Group:		Applications/WWW
 Source0:	http://download.oreon-project.org/tgz/%{name}-%{version}.tar.gz
 # Source0-md5:	31d1a2948fde3e4c0e922047c4633781
